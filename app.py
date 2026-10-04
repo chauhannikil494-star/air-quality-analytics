@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import joblib
@@ -7,10 +6,43 @@ import joblib
 # Page Configuration
 # -------------------------------------------------
 st.set_page_config(
-    page_title="AQI Prediction Dashboard",
+    page_title="AQI Analytics Dashboard",
     page_icon="🌍",
     layout="wide"
 )
+
+# -------------------------------------------------
+# Custom CSS
+# -------------------------------------------------
+st.markdown("""
+<style>
+.main-title {
+    font-size: 42px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    font-size: 18px;
+    color: #666666;
+    margin-bottom: 25px;
+}
+
+.section-title {
+    font-size: 25px;
+    font-weight: 600;
+    margin-top: 15px;
+}
+
+.footer {
+    text-align: center;
+    color: #777777;
+    font-size: 14px;
+    padding: 20px;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 # -------------------------------------------------
 # Load Model
@@ -19,43 +51,207 @@ model = joblib.load("random_forest_aqi_model.pkl")
 
 
 # -------------------------------------------------
+# Load Dataset
+# -------------------------------------------------
+@st.cache_data
+def load_data():
+
+    df = pd.read_csv("city_day.csv")
+
+    df["Date"] = pd.to_datetime(
+        df["Date"],
+        errors="coerce"
+    )
+
+    return df
+
+
+air_quality = load_data()
+
+
+# -------------------------------------------------
 # AQI Category Function
 # -------------------------------------------------
 def get_aqi_category(aqi):
+
     if aqi <= 50:
         return "Good"
+
     elif aqi <= 100:
         return "Satisfactory"
+
     elif aqi <= 200:
         return "Moderate"
+
     elif aqi <= 300:
         return "Poor"
+
     elif aqi <= 400:
         return "Very Poor"
+
     else:
         return "Severe"
 
 
 # -------------------------------------------------
-# Header
+# Health Recommendations
 # -------------------------------------------------
-st.title("🌍 Air Quality Analytics & AQI Prediction")
-st.write(
-    "Enter pollutant measurements to predict the Air Quality Index (AQI) "
-    "using a trained Random Forest machine learning model."
+recommendations = {
+
+    "Good":
+        "Air quality is good. Outdoor activities are generally safe.",
+
+    "Satisfactory":
+        "Air quality is satisfactory. Sensitive individuals should take normal precautions.",
+
+    "Moderate":
+        "Air quality is moderate. Sensitive individuals should limit prolonged outdoor exposure.",
+
+    "Poor":
+        "Air quality is poor. Consider limiting prolonged outdoor activities.",
+
+    "Very Poor":
+        "Air quality is very poor. Avoid prolonged outdoor activities and take necessary precautions.",
+
+    "Severe":
+        "Air quality is severe. Avoid outdoor exposure as much as possible."
+}
+
+
+# =================================================
+# SIDEBAR
+# =================================================
+
+with st.sidebar:
+
+    st.header("🌍 About This Project")
+
+    st.write(
+        "This application analyzes air quality data and predicts "
+        "AQI using a Random Forest Regression model."
+    )
+
+    st.divider()
+
+    st.subheader("🤖 Machine Learning")
+
+    st.write("Model: Random Forest Regression")
+    st.write("R² Score: 0.909")
+    st.write("RMSE: 40.84")
+
+    st.divider()
+
+    st.subheader("📊 Dataset")
+
+    st.write(
+        f"Records: {len(air_quality):,}"
+    )
+
+    st.write(
+        f"Columns: {air_quality.shape[1]}"
+    )
+
+    st.divider()
+
+    st.subheader("🧪 Pollutants")
+
+    st.write(
+        "PM2.5, PM10, NO, NO2, NOx, NH3, CO, "
+        "SO2, O3, Benzene, Toluene and Xylene"
+    )
+
+
+# =================================================
+# HEADER
+# =================================================
+
+st.markdown(
+    '<div class="main-title">🌍 Air Quality Analytics</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="subtitle">'
+    'Air Quality Analysis & AQI Prediction Dashboard'
+    '</div>',
+    unsafe_allow_html=True
 )
 
 st.divider()
 
 
+# =================================================
+# DATASET OVERVIEW
+# =================================================
+
+st.markdown(
+    '<div class="section-title">📌 Dataset Overview</div>',
+    unsafe_allow_html=True
+)
+
+metric1, metric2, metric3, metric4 = st.columns(4)
+
+
+with metric1:
+
+    st.metric(
+        "Total Records",
+        f"{len(air_quality):,}"
+    )
+
+
+with metric2:
+
+    st.metric(
+        "Cities",
+        air_quality["City"].nunique()
+    )
+
+
+with metric3:
+
+    st.metric(
+        "Average AQI",
+        f"{air_quality['AQI'].mean():.2f}"
+    )
+
+
+with metric4:
+
+    st.metric(
+        "Maximum AQI",
+        f"{air_quality['AQI'].max():.2f}"
+    )
+
+
+st.divider()
+
+
+# =================================================
+# AQI PREDICTION
+# =================================================
+
+st.markdown(
+    '<div class="section-title">🔮 AQI Prediction</div>',
+    unsafe_allow_html=True
+)
+
+st.write(
+    "Enter pollutant concentrations to predict the Air Quality Index."
+)
+
+
 # -------------------------------------------------
-# Input Section
+# Pollutant Inputs
 # -------------------------------------------------
-st.subheader("🧪 Pollutant Measurements")
 
 col1, col2, col3 = st.columns(3)
 
+
 with col1:
+
+    st.markdown("### 🌫️ Particulate & Nitrogen")
+
     pm25 = st.number_input(
         "PM2.5",
         min_value=0.0,
@@ -82,6 +278,9 @@ with col1:
 
 
 with col2:
+
+    st.markdown("### 🧪 Other Pollutants")
+
     nox = st.number_input(
         "NOx",
         min_value=0.0,
@@ -108,6 +307,9 @@ with col2:
 
 
 with col3:
+
+    st.markdown("### 🧬 Organic & Ozone")
+
     o3 = st.number_input(
         "O3",
         min_value=0.0,
@@ -133,15 +335,28 @@ with col3:
     )
 
 
-st.divider()
+st.write("")
 
 
 # -------------------------------------------------
 # Prediction Button
 # -------------------------------------------------
-if st.button("🔍 Predict AQI", use_container_width=True):
+
+predict_button = st.button(
+    "🔍 Predict AQI",
+    use_container_width=True,
+    type="primary"
+)
+
+
+# =================================================
+# PREDICTION RESULT
+# =================================================
+
+if predict_button:
 
     input_data = pd.DataFrame([{
+
         "PM2.5": pm25,
         "PM10": pm10,
         "NO": no,
@@ -154,94 +369,147 @@ if st.button("🔍 Predict AQI", use_container_width=True):
         "Benzene": benzene,
         "Toluene": toluene,
         "Xylene": xylene
+
     }])
+
+
     # -------------------------------------------------
     # Input Validation
     # -------------------------------------------------
+
     if (input_data.iloc[0] == 0).all():
-        st.error("Please enter valid pollutant values before predicting AQI.")
-        st.stop()
 
-    # Make prediction
-    predicted_aqi = model.predict(input_data)[0]
-
-    # Get category
-    category = get_aqi_category(predicted_aqi)
-    # -------------------------------------------------
-    # Health Recommendation
-    # -------------------------------------------------
-    recommendations = {
-        "Good": "Air quality is good. Outdoor activities are generally safe.",
-        "Satisfactory": "Air quality is satisfactory. Sensitive individuals should take normal precautions.",
-        "Moderate": "Air quality is moderate. Sensitive individuals should limit prolonged outdoor exposure.",
-        "Poor": "Air quality is poor. Consider limiting prolonged outdoor activities.",
-        "Very Poor": "Air quality is very poor. Avoid prolonged outdoor activities and take necessary precautions.",
-        "Severe": "Air quality is severe. Avoid outdoor exposure as much as possible."
-    }
-
-    recommendation = recommendations[category]
-
-    st.subheader("❤️ Health Recommendation")
-    # -------------------------------------------------
-    # AQI Visual Indicator
-    # -------------------------------------------------
-    st.subheader("📈 AQI Level Indicator")
-
-    aqi_progress = min(int((predicted_aqi / 500) * 100), 100)
-
-    st.progress(aqi_progress)
-
-    st.caption(
-        f"AQI Level: {predicted_aqi:.2f} / 500"
-    )
-    st.info(recommendation)
-
-
-    # -------------------------------------------------
-    # Prediction Result
-    # -------------------------------------------------
-    st.subheader("📊 Prediction Result")
-
-    result_col1, result_col2 = st.columns(2)
-
-    with result_col1:
-        st.metric(
-            label="Predicted AQI",
-            value=f"{predicted_aqi:.2f}"
+        st.error(
+            "Please enter valid pollutant values before predicting AQI."
         )
 
-    with result_col2:
+        st.stop()
+
+
+    # -------------------------------------------------
+    # Model Prediction
+    # -------------------------------------------------
+
+    predicted_aqi = model.predict(input_data)[0]
+
+    category = get_aqi_category(
+        predicted_aqi
+    )
+
+    recommendation = recommendations[
+        category
+    ]
+
+
+    # -------------------------------------------------
+    # Result Metrics
+    # -------------------------------------------------
+
+    st.subheader("📊 Prediction Result")
+
+    result1, result2, result3 = st.columns(3)
+
+
+    with result1:
+
         st.metric(
-            label="AQI Category",
-            value=category
+            "Predicted AQI",
+            f"{predicted_aqi:.2f}"
+        )
+
+
+    with result2:
+
+        st.metric(
+            "AQI Category",
+            category
+        )
+
+
+    with result3:
+
+        st.metric(
+            "Model",
+            "Random Forest"
         )
 
 
     # -------------------------------------------------
     # Category Message
     # -------------------------------------------------
+
     if category == "Good":
-        st.success("🟢 Air quality is Good.")
+
+        st.success(
+            "🟢 Air quality is Good."
+        )
 
     elif category == "Satisfactory":
-        st.success("🟢 Air quality is Satisfactory.")
+
+        st.success(
+            "🟢 Air quality is Satisfactory."
+        )
 
     elif category == "Moderate":
-        st.warning("🟡 Air quality is Moderate.")
+
+        st.warning(
+            "🟡 Air quality is Moderate."
+        )
 
     elif category == "Poor":
-        st.warning("🟠 Air quality is Poor.")
+
+        st.warning(
+            "🟠 Air quality is Poor."
+        )
 
     elif category == "Very Poor":
-        st.error("🔴 Air quality is Very Poor.")
+
+        st.error(
+            "🔴 Air quality is Very Poor."
+        )
 
     else:
-        st.error("🔴 Air quality is Severe.")
+
+        st.error(
+            "🔴 Air quality is Severe."
+        )
+
+
+    # -------------------------------------------------
+    # AQI Indicator
+    # -------------------------------------------------
+
+    st.subheader("📈 AQI Level Indicator")
+
+    aqi_progress = min(
+        int((predicted_aqi / 500) * 100),
+        100
+    )
+
+    st.progress(
+        aqi_progress
+    )
+
+    st.caption(
+        f"AQI Level: {predicted_aqi:.2f} / 500"
+    )
+
+
+    # -------------------------------------------------
+    # Health Recommendation
+    # -------------------------------------------------
+
+    st.subheader("❤️ Health Recommendation")
+
+    st.info(
+        recommendation
+    )
 
 
     # -------------------------------------------------
     # Input Summary
     # -------------------------------------------------
+
     st.subheader("📋 Input Summary")
 
     st.dataframe(
@@ -251,12 +519,275 @@ if st.button("🔍 Predict AQI", use_container_width=True):
     )
 
 
-# -------------------------------------------------
-# Footer
-# -------------------------------------------------
+# =================================================
+# ANALYTICS DASHBOARD
+# =================================================
+
 st.divider()
 
-st.caption(
-    "AQI Prediction Dashboard | Random Forest Regression | "
-    "Air Quality Analytics Project"
+st.markdown(
+    '<div class="section-title">📊 Air Quality Analytics</div>',
+    unsafe_allow_html=True
+)
+
+st.write(
+    "Explore patterns and trends from the air quality dataset."
+)
+
+
+# =================================================
+# AQI DISTRIBUTION
+# =================================================
+
+st.subheader("📊 AQI Distribution")
+
+aqi_data = air_quality[
+    "AQI"
+].dropna()
+
+
+aqi_bins = pd.cut(
+    aqi_data,
+    bins=10
+)
+
+
+aqi_distribution = (
+    aqi_bins
+    .value_counts()
+    .sort_index()
+    .reset_index()
+)
+
+
+aqi_distribution.columns = [
+    "AQI Range",
+    "Count"
+]
+
+
+aqi_distribution["AQI Range"] = (
+    aqi_distribution[
+        "AQI Range"
+    ].astype(str)
+)
+
+
+st.bar_chart(
+    aqi_distribution,
+    x="AQI Range",
+    y="Count"
+)
+
+
+# =================================================
+# TOP 10 CITIES BY AQI
+# =================================================
+
+st.subheader(
+    "🏙️ Top 10 Cities by Average AQI"
+)
+
+
+city_avg_aqi = (
+    air_quality
+    .groupby("City")["AQI"]
+    .mean()
+    .dropna()
+    .sort_values(
+        ascending=False
+    )
+    .head(10)
+)
+
+
+city_aqi_chart = (
+    city_avg_aqi
+    .reset_index()
+)
+
+
+city_aqi_chart.columns = [
+    "City",
+    "Average AQI"
+]
+
+
+st.bar_chart(
+    city_aqi_chart,
+    x="City",
+    y="Average AQI"
+)
+
+
+# =================================================
+# YEAR-WISE AQI
+# =================================================
+
+st.subheader(
+    "📈 Year-wise Average AQI"
+)
+
+
+yearly_aqi = (
+    air_quality
+    .dropna(
+        subset=["AQI", "Date"]
+    )
+    .groupby(
+        air_quality[
+            "Date"
+        ].dt.year
+    )["AQI"]
+    .mean()
+    .reset_index()
+)
+
+
+yearly_aqi.columns = [
+    "Year",
+    "Average AQI"
+]
+
+
+st.line_chart(
+    yearly_aqi,
+    x="Year",
+    y="Average AQI"
+)
+
+
+# =================================================
+# MONTHLY AQI
+# =================================================
+
+st.subheader(
+    "📅 Monthly Average AQI"
+)
+
+
+monthly_aqi = (
+    air_quality
+    .dropna(
+        subset=["AQI", "Date"]
+    )
+    .groupby(
+        air_quality[
+            "Date"
+        ].dt.month
+    )["AQI"]
+    .mean()
+    .reset_index()
+)
+
+
+monthly_aqi.columns = [
+    "Month",
+    "Average AQI"
+]
+
+
+st.line_chart(
+    monthly_aqi,
+    x="Month",
+    y="Average AQI"
+)
+
+
+# =================================================
+# AQI CATEGORY DISTRIBUTION
+# =================================================
+
+st.subheader(
+    "🟢 AQI Category Distribution"
+)
+
+
+category_counts = (
+    air_quality[
+        "AQI_Bucket"
+    ]
+    .value_counts()
+    .reset_index()
+)
+
+
+category_counts.columns = [
+    "AQI Category",
+    "Count"
+]
+
+
+st.bar_chart(
+    category_counts,
+    x="AQI Category",
+    y="Count"
+)
+
+
+# =================================================
+# POLLUTANT ANALYSIS
+# =================================================
+
+st.subheader(
+    "🧪 Average Pollutant Concentration"
+)
+
+
+pollutants = [
+
+    "PM2.5",
+    "PM10",
+    "NO",
+    "NO2",
+    "NOx",
+    "NH3",
+    "CO",
+    "SO2",
+    "O3",
+    "Benzene",
+    "Toluene",
+    "Xylene"
+
+]
+
+
+pollutant_average = (
+    air_quality[
+        pollutants
+    ]
+    .mean()
+    .sort_values(
+        ascending=False
+    )
+    .reset_index()
+)
+
+
+pollutant_average.columns = [
+    "Pollutant",
+    "Average Concentration"
+]
+
+
+st.bar_chart(
+    pollutant_average,
+    x="Pollutant",
+    y="Average Concentration"
+)
+
+
+# =================================================
+# FOOTER
+# =================================================
+
+st.divider()
+
+st.markdown(
+    '<div class="footer">'
+    '🌍 Air Quality Analytics & AQI Prediction '
+    '| Random Forest Regression '
+    '| Machine Learning Project'
+    '</div>',
+    unsafe_allow_html=True
 )
