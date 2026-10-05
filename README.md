@@ -121,3 +121,10 @@ Model Saving
 Streamlit Dashboard
         ↓
 AQI Prediction
+## ⚙️ Installation & Setup
+
+### 1. Clone the Repository
+
+```bash
+git clone <YOUR_GITHUB_REPOSITORY_URL>
+cd Air_Quality_Analytics
