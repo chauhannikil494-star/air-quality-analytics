@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 
+
 # --------------------------------------------------
 # PAGE CONFIGURATION
 # --------------------------------------------------
@@ -11,6 +12,7 @@ st.set_page_config(
     page_icon="🌍",
     layout="wide"
 )
+
 
 # --------------------------------------------------
 # CUSTOM CSS
@@ -47,6 +49,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
 # --------------------------------------------------
 # LOAD MODEL
 # --------------------------------------------------
@@ -57,6 +60,7 @@ def load_model():
 
 
 model = load_model()
+
 
 # --------------------------------------------------
 # LOAD DATASET
@@ -76,6 +80,7 @@ def load_data():
 
 
 air_quality = load_data()
+
 
 # --------------------------------------------------
 # AQI CATEGORY FUNCTION
@@ -127,6 +132,7 @@ recommendations = {
         "Air quality is severe. Avoid outdoor exposure as much as possible."
 }
 
+
 # --------------------------------------------------
 # SIDEBAR
 # --------------------------------------------------
@@ -170,6 +176,7 @@ with st.sidebar:
         "SO2, O3, Benzene, Toluene and Xylene"
     )
 
+
 # --------------------------------------------------
 # MAIN TITLE
 # --------------------------------------------------
@@ -189,6 +196,7 @@ st.markdown(
 )
 
 st.divider()
+
 
 # --------------------------------------------------
 # DATASET OVERVIEW
@@ -233,8 +241,9 @@ with metric4:
 
 st.divider()
 
+
 # --------------------------------------------------
-# CITY SELECTION
+# CITY-WISE ANALYSIS
 # --------------------------------------------------
 
 st.markdown(
@@ -245,7 +254,7 @@ st.markdown(
 )
 
 st.write(
-    "Select a city to view its air quality statistics and AQI trend."
+    "Select a city to explore its historical AQI performance."
 )
 
 cities = sorted(
@@ -259,62 +268,48 @@ selected_city = st.selectbox(
     cities
 )
 
-# Filter selected city
 city_data = air_quality[
     air_quality["City"] == selected_city
 ].copy()
 
-# --------------------------------------------------
-# CITY METRICS
-# --------------------------------------------------
+city_avg_aqi = city_data["AQI"].mean()
+city_max_aqi = city_data["AQI"].max()
+city_records = len(city_data)
+
+city_category = get_aqi_category(
+    city_avg_aqi
+)
 
 city_metric1, city_metric2, city_metric3, city_metric4 = st.columns(4)
 
 with city_metric1:
 
     st.metric(
-        "Selected City",
-        selected_city
+        "Average AQI",
+        f"{city_avg_aqi:.2f}"
     )
 
 with city_metric2:
 
     st.metric(
-        "Average AQI",
-        f"{city_data['AQI'].mean():.2f}"
+        "Maximum AQI",
+        f"{city_max_aqi:.2f}"
     )
 
 with city_metric3:
 
     st.metric(
-        "Maximum AQI",
-        f"{city_data['AQI'].max():.2f}"
+        "Records",
+        f"{city_records:,}"
     )
 
 with city_metric4:
 
     st.metric(
-        "Records",
-        f"{len(city_data):,}"
+        "Category",
+        city_category
     )
 
-# --------------------------------------------------
-# CITY AQI CATEGORY
-# --------------------------------------------------
-
-city_average_aqi = city_data["AQI"].mean()
-
-city_category = get_aqi_category(
-    city_average_aqi
-)
-
-st.write("")
-
-st.info(
-    f"📍 **{selected_city}** has an average AQI of "
-    f"**{city_average_aqi:.2f}**, which falls under the "
-    f"**{city_category}** category."
-)
 
 # --------------------------------------------------
 # CITY AQI TREND
@@ -332,17 +327,62 @@ city_trend = (
     .sort_values("Date")
 )
 
-st.line_chart(
-    city_trend,
-    x="Date",
-    y="AQI"
-)
+if not city_trend.empty:
+
+    st.line_chart(
+        city_trend,
+        x="Date",
+        y="AQI"
+    )
+
+else:
+
+    st.info(
+        "No valid date/AQI data available for this city."
+    )
+
+
+# --------------------------------------------------
+# CPCB LIVE AQI REFERENCE
+# --------------------------------------------------
 
 st.divider()
+
+st.markdown(
+    '<div class="section-title">'
+    '🌐 CPCB Live AQI'
+    '</div>',
+    unsafe_allow_html=True
+)
+
+st.write(
+    "For the latest official AQI published by CPCB, "
+    "use the official CPCB Air Quality portal."
+)
+
+st.info(
+    "This project does not calculate or display a "
+    "live CPCB AQI inside the dashboard. "
+    "The button below opens the official CPCB portal "
+    "where current AQI information can be checked."
+)
+
+st.link_button(
+    "🌐 Open Official CPCB Air Quality Portal",
+    "https://airquality.cpcb.gov.in/"
+)
+
+st.caption(
+    "Source: Central Pollution Control Board (CPCB). "
+    "CPCB's Sameer system provides hourly National AQI updates."
+)
+
 
 # --------------------------------------------------
 # AQI PREDICTION
 # --------------------------------------------------
+
+st.divider()
 
 st.markdown(
     '<div class="section-title">'
@@ -357,13 +397,16 @@ st.write(
 
 col1, col2, col3 = st.columns(3)
 
+
 # --------------------------------------------------
 # COLUMN 1
 # --------------------------------------------------
 
 with col1:
 
-    st.markdown("### 🌫️ Particulate & Nitrogen")
+    st.markdown(
+        "### 🌫️ Particulate & Nitrogen"
+    )
 
     pm25 = st.number_input(
         "PM2.5",
@@ -389,13 +432,16 @@ with col1:
         value=50.0
     )
 
+
 # --------------------------------------------------
 # COLUMN 2
 # --------------------------------------------------
 
 with col2:
 
-    st.markdown("### 🧪 Other Pollutants")
+    st.markdown(
+        "### 🧪 Other Pollutants"
+    )
 
     nox = st.number_input(
         "NOx",
@@ -421,13 +467,16 @@ with col2:
         value=20.0
     )
 
+
 # --------------------------------------------------
 # COLUMN 3
 # --------------------------------------------------
 
 with col3:
 
-    st.markdown("### 🧬 Organic & Ozone")
+    st.markdown(
+        "### 🧬 Organic & Ozone"
+    )
 
     o3 = st.number_input(
         "O3",
@@ -453,7 +502,9 @@ with col3:
         value=2.0
     )
 
+
 st.write("")
+
 
 # --------------------------------------------------
 # PREDICTION BUTTON
@@ -464,6 +515,7 @@ predict_button = st.button(
     use_container_width=True,
     type="primary"
 )
+
 
 # --------------------------------------------------
 # PREDICTION
@@ -488,6 +540,7 @@ if predict_button:
 
     }])
 
+
     if (input_data.iloc[0] == 0).all():
 
         st.error(
@@ -496,23 +549,29 @@ if predict_button:
 
         st.stop()
 
+
     predicted_aqi = model.predict(
         input_data
     )[0]
+
 
     category = get_aqi_category(
         predicted_aqi
     )
 
+
     recommendation = recommendations[
         category
     ]
+
 
     # --------------------------------------------------
     # RESULT
     # --------------------------------------------------
 
-    st.subheader("📊 Prediction Result")
+    st.subheader(
+        "📊 Prediction Result"
+    )
 
     result1, result2, result3 = st.columns(3)
 
@@ -536,6 +595,7 @@ if predict_button:
             "Model",
             "Random Forest"
         )
+
 
     # --------------------------------------------------
     # AQI STATUS
@@ -577,11 +637,14 @@ if predict_button:
             "🔴 Air quality is Severe."
         )
 
+
     # --------------------------------------------------
     # AQI INDICATOR
     # --------------------------------------------------
 
-    st.subheader("📈 AQI Level Indicator")
+    st.subheader(
+        "📈 AQI Level Indicator"
+    )
 
     aqi_progress = min(
         int((predicted_aqi / 500) * 100),
@@ -596,27 +659,34 @@ if predict_button:
         f"AQI Level: {predicted_aqi:.2f} / 500"
     )
 
+
     # --------------------------------------------------
     # HEALTH RECOMMENDATION
     # --------------------------------------------------
 
-    st.subheader("❤️ Health Recommendation")
+    st.subheader(
+        "❤️ Health Recommendation"
+    )
 
     st.info(
         recommendation
     )
 
+
     # --------------------------------------------------
     # INPUT SUMMARY
     # --------------------------------------------------
 
-    st.subheader("📋 Input Summary")
+    st.subheader(
+        "📋 Input Summary"
+    )
 
     st.dataframe(
         input_data,
         use_container_width=True,
         hide_index=True
     )
+
 
 # --------------------------------------------------
 # ANALYTICS
@@ -635,11 +705,14 @@ st.write(
     "Explore patterns and trends from the air quality dataset."
 )
 
+
 # --------------------------------------------------
 # AQI DISTRIBUTION
 # --------------------------------------------------
 
-st.subheader("📊 AQI Distribution")
+st.subheader(
+    "📊 AQI Distribution"
+)
 
 aqi_data = air_quality[
     "AQI"
@@ -673,6 +746,7 @@ st.bar_chart(
     y="Count"
 )
 
+
 # --------------------------------------------------
 # TOP 10 CITIES
 # --------------------------------------------------
@@ -681,7 +755,7 @@ st.subheader(
     "🏙️ Top 10 Cities by Average AQI"
 )
 
-city_avg_aqi_chart = (
+city_avg_aqi_data = (
     air_quality
     .groupby("City")["AQI"]
     .mean()
@@ -690,19 +764,24 @@ city_avg_aqi_chart = (
         ascending=False
     )
     .head(10)
+)
+
+city_aqi_chart = (
+    city_avg_aqi_data
     .reset_index()
 )
 
-city_avg_aqi_chart.columns = [
+city_aqi_chart.columns = [
     "City",
     "Average AQI"
 ]
 
 st.bar_chart(
-    city_avg_aqi_chart,
+    city_aqi_chart,
     x="City",
     y="Average AQI"
 )
+
 
 # --------------------------------------------------
 # YEAR-WISE AQI
@@ -714,7 +793,9 @@ st.subheader(
 
 year_data = air_quality[
     ["Date", "AQI"]
-].dropna().copy()
+].dropna()
+
+year_data = year_data.copy()
 
 year_data["Year"] = (
     year_data["Date"]
@@ -739,6 +820,7 @@ st.line_chart(
     y="Average AQI"
 )
 
+
 # --------------------------------------------------
 # MONTHLY AQI
 # --------------------------------------------------
@@ -749,7 +831,9 @@ st.subheader(
 
 month_data = air_quality[
     ["Date", "AQI"]
-].dropna().copy()
+].dropna()
+
+month_data = month_data.copy()
 
 month_data["Month"] = (
     month_data["Date"]
@@ -773,6 +857,7 @@ st.line_chart(
     x="Month",
     y="Average AQI"
 )
+
 
 # --------------------------------------------------
 # AQI CATEGORY DISTRIBUTION
@@ -799,6 +884,7 @@ st.bar_chart(
     y="Count"
 )
 
+
 # --------------------------------------------------
 # POLLUTANT AVERAGE
 # --------------------------------------------------
@@ -808,6 +894,7 @@ st.subheader(
 )
 
 pollutants = [
+
     "PM2.5",
     "PM10",
     "NO",
@@ -820,6 +907,7 @@ pollutants = [
     "Benzene",
     "Toluene",
     "Xylene"
+
 ]
 
 pollutant_average = (
@@ -841,6 +929,7 @@ st.bar_chart(
     x="Pollutant",
     y="Average Concentration"
 )
+
 
 # --------------------------------------------------
 # FOOTER
