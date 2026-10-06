@@ -343,38 +343,48 @@ else:
 
 
 # --------------------------------------------------
-# CPCB LIVE AQI REFERENCE
+# OFFICIAL CPCB AQI
 # --------------------------------------------------
 
 st.divider()
 
 st.markdown(
     '<div class="section-title">'
-    '🌐 CPCB Live AQI'
+    '🌐 Official CPCB AQI'
     '</div>',
     unsafe_allow_html=True
 )
 
 st.write(
-    "For the latest official AQI published by CPCB, "
-    "use the official CPCB Air Quality portal."
+    "Check the latest official AQI published by CPCB "
+    "through the official CPCB Air Quality portal."
 )
 
-st.info(
-    "This project does not calculate or display a "
-    "live CPCB AQI inside the dashboard. "
-    "The button below opens the official CPCB portal "
-    "where current AQI information can be checked."
-)
+cpcb_col1, cpcb_col2 = st.columns([2, 1])
 
-st.link_button(
-    "🌐 Open Official CPCB Air Quality Portal",
-    "https://airquality.cpcb.gov.in/"
-)
+with cpcb_col1:
+
+    st.info(
+        "Official CPCB AQI and ML Predicted AQI are "
+        "separate values. This dashboard does not "
+        "present its machine-learning prediction as "
+        "an official CPCB reading."
+    )
+
+    st.caption(
+        "CPCB's Sameer system provides hourly National AQI updates."
+    )
+
+with cpcb_col2:
+
+    st.link_button(
+        "🌐 Open Official CPCB AQI",
+        "https://airquality.cpcb.gov.in/",
+        use_container_width=True
+    )
 
 st.caption(
-    "Source: Central Pollution Control Board (CPCB). "
-    "CPCB's Sameer system provides hourly National AQI updates."
+    "Official source: Central Pollution Control Board (CPCB)."
 )
 
 
